@@ -29,4 +29,3 @@ class Pushover:
         conn.request('POST', f'/{self.api_version}/messages.json', request_json, headers)
 
         response = conn.getresponse()
-        print(response.read().decode())
