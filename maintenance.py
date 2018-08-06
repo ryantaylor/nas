@@ -1,12 +1,16 @@
+from datetime import datetime
 import os
 
+from duplicacy import Duplicacy, DuplicacyError
+from lock import get_lock, LockError
 from pushover import Pushover
 from snapraid import Snapraid, SnapraidError
-from lock import get_lock, LockError
 
 MAX_FILES_REMOVED = 50
 SCRUB_FREQUENCY_DAYS = 7
 SCRUB_ARRAY_PERCENTAGE = 25
+MOUNT_LOCATION = '/mnt/pool'
+DAYS_BETWEEN_SNAPSHOTS = 1
 
 def obtain_lock(pushover):
     try:
@@ -59,7 +63,36 @@ def execute_snapraid_maintenance(pushover):
     except SnapraidError as err:
         message = 'An error occurred during sync!\n' \
                   f'Error code {err.error_code} was returned:\n' \
-                  f'{err.message}'
+                  f'{err.error}\n' \
+                  f'{err.output}'
+        pushover.send(title='Error!', message=message)
+        return False
+
+def execute_duplicacy_backup(pushover):
+    try:
+        list = Duplicacy.list()
+
+        delta = (datetime.now() - list.last_updated_at).days
+        if delta < DAYS_BETWEEN_SNAPSHOTS:
+            pushover.send(title='Backup Status', message='Recent snapshot detected! Skipping backup.')
+            return True
+
+        days_text = f'{delta} days' if delta > 1 else f'{delta} day'
+        message = f'It has been {days_text} since the last snapshot.'
+        pushover.send(title='Backup Beginning...', message=message)
+
+        output = Duplicacy.backup()
+        pushover.send(title='Backup Complete!', message=output)
+
+        output = Duplicacy.prune('0:360', '30:180', '7:30', '1:7')
+        pushover.send(title='Prune Complete!', message=output)
+
+        return True
+    except DuplicacyError as err:
+        message = 'An error occurred during backup!\n' \
+                  f'Error code {err.error_code} was returned:\n' \
+                  f'{err.error}\n' \
+                  f'{err.output}'
         pushover.send(title='Error!', message=message)
         return False
 
@@ -69,7 +102,12 @@ def main():
     if not obtain_lock(pushover):
         return False
 
-    return execute_snapraid_maintenance(pushover)
+    os.chdir(MOUNT_LOCATION)
+
+    status = execute_snapraid_maintenance(pushover)
+
+    if status:
+        execute_duplicacy_backup(pushover)
 
 if __name__ == '__main__':
     main()

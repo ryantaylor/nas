@@ -3,9 +3,10 @@ import re
 import subprocess
 
 class SnapraidError(Exception):
-    def __init__(self, error_code, message):
+    def __init__(self, error_code, output, error):
         self.error_code = error_code
-        self.message = message
+        self.output = output
+        self.error = error
 
 class SnapraidDiff:
     def __init__(self, command_output):
@@ -105,5 +106,5 @@ class Snapraid:
         result = subprocess.run(['snapraid'] + commands, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         if result.returncode == 1:
-            raise SnapraidError(result.returncode, result.stderr.decode('UTF-8'))
+            raise SnapraidError(result.returncode, result.stdout.decode('UTF-8'), result.stderr.decode('UTF-8'))
         return result.stdout.decode('UTF-8')
