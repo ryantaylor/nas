@@ -10,7 +10,7 @@ MAX_FILES_REMOVED = 50
 SCRUB_FREQUENCY_DAYS = 7
 SCRUB_ARRAY_PERCENTAGE = 25
 MOUNT_LOCATION = '/mnt/pool'
-DAYS_BETWEEN_SNAPSHOTS = 1
+HOURS_BETWEEN_SNAPSHOTS = 12
 
 def obtain_lock(pushover):
     try:
@@ -72,13 +72,13 @@ def execute_duplicacy_backup(pushover):
     try:
         list = Duplicacy.list()
 
-        delta = (datetime.now() - list.last_updated_at).days
-        if delta < DAYS_BETWEEN_SNAPSHOTS:
+        delta = (datetime.now() - list.last_updated_at).hours
+        if delta < HOURS_BETWEEN_SNAPSHOTS:
             pushover.send(title='Backup Status', message='Recent snapshot detected! Skipping backup.')
             return True
 
-        days_text = f'{delta} days' if delta > 1 else f'{delta} day'
-        message = f'It has been {days_text} since the last snapshot.'
+        hours_text = f'{delta} hours' if delta > 1 else f'{delta} hour'
+        message = f'It has been {hours_text} since the last snapshot.'
         pushover.send(title='Backup Beginning...', message=message)
 
         output = Duplicacy.backup()
