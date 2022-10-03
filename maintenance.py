@@ -72,12 +72,14 @@ def execute_duplicacy_backup(pushover):
     try:
         list = Duplicacy.list()
 
-        delta = (datetime.now() - list.last_updated_at).hours
-        if delta < HOURS_BETWEEN_SNAPSHOTS:
+        delta = datetime.now() - list.last_updated_at
+        days = delta.days
+        hours = delta.seconds / 60 / 60
+        if hours < HOURS_BETWEEN_SNAPSHOTS and days == 0:
             pushover.send(title='Backup Status', message='Recent snapshot detected! Skipping backup.')
             return True
 
-        hours_text = f'{delta} hours' if delta > 1 else f'{delta} hour'
+        hours_text = f'{hours} hours' if hours > 1 else f'{hours} hour'
         message = f'It has been {hours_text} since the last snapshot.'
         pushover.send(title='Backup Beginning...', message=message)
 
