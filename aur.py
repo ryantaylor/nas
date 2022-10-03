@@ -12,7 +12,7 @@ def check_updates(application, pushover):
     local_result = subprocess.run(['git', 'rev-parse', 'HEAD'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     upstream_result = subprocess.run(['git', 'rev-parse', '@{u}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    if local_result.stdout.decode('UTF-8') == upstream_result.stdout.decode('UTF-8'):
+    if local_result.stdout.decode('UTF-8') != upstream_result.stdout.decode('UTF-8'):
         pushover.send(title='Update Available!', message=f'{application} can be updated!')
         return True
 
