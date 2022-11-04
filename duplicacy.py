@@ -14,7 +14,7 @@ class DuplicacyList:
 
     def _extract_final_revision_timestamp(self, command_output):
         final_revision = command_output.splitlines()[-1]
-        timestamp = ' '.join(final_revision.split()[-2:])
+        timestamp = ' '.join(final_revision.split()[-3:-1])
         return datetime.strptime(timestamp, '%Y-%m-%d %H:%M')
 
 class Duplicacy:
